@@ -1,0 +1,11 @@
+services:
+  oli:
+    build: .
+    image: oli-illumination:latest
+    container_name: oli-illumination
+    ports:
+      - "3000:3000"
+    environment:
+      # Optional. Leave empty for the Zero-Key Offline Demo.
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    restart: unless-stopped
