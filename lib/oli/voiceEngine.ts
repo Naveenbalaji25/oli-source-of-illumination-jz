@@ -83,9 +83,24 @@ function pickBrowserVoice(lang: Lang): SpeechSynthesisVoice | undefined {
   return voices.find((v) => v.lang.startsWith(prefix)) ?? voices.find((v) => v.lang.startsWith(lang))
 }
 
-function speakBrowser(text: string, lang: Lang, token: number): Promise<void> {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) return Promise.resolve()
-  if (token !== speakToken) return Promise.resolve()
+function waitForVoices(timeoutMs = 1500): Promise<void> {
+  const synth = window.speechSynthesis
+  if (synth.getVoices().length > 0) return Promise.resolve()
+  return new Promise((resolve) => {
+    const done = () => {
+      synth.removeEventListener("voiceschanged", done)
+      clearTimeout(timer)
+      resolve()
+    }
+    const timer = setTimeout(done, timeoutMs)
+    synth.addEventListener("voiceschanged", done)
+  })
+}
+
+async function speakBrowser(text: string, lang: Lang, token: number): Promise<void> {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return
+  await waitForVoices()
+  if (token !== speakToken) return
 
   return new Promise<void>((resolve) => {
     const utterance = new SpeechSynthesisUtterance(text)
@@ -123,6 +138,8 @@ export async function speak(text: string, lang: Lang): Promise<void> {
   }
   await speakBrowser(text, lang, token)
 }
+
+export const speakText = speak
 
 interface RecognitionResultEvent {
   results: ArrayLike<ArrayLike<{ transcript: string }>>

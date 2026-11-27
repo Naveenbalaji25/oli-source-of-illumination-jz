@@ -1,5 +1,5 @@
 import type { Lang } from "./i18n"
-import type { VisionMode } from "./samples"
+import type { VisionMode } from "./vision-messages"
 
 export type { VisionMode }
 
@@ -29,17 +29,31 @@ export function stopStream(stream: MediaStream | null): void {
   stream?.getTracks().forEach((track) => track.stop())
 }
 
-/** Captures the current video frame as base64 JPEG (without the data: prefix). */
+function isBlankFrame(ctx: CanvasRenderingContext2D, width: number, height: number): boolean {
+  const { data } = ctx.getImageData(0, 0, width, height)
+  const step = 4 * 37
+  let min = 255
+  let max = 0
+  for (let i = 0; i < data.length; i += step) {
+    const luma = (data[i] * 299 + data[i + 1] * 587 + data[i + 2] * 114) / 1000
+    if (luma < min) min = luma
+    if (luma > max) max = luma
+  }
+  return max < 12 || max - min < 6
+}
+
+/** Captures a fresh frame from the live video as base64 JPEG, or null if the frame is blank. */
 export function captureFrame(video: HTMLVideoElement): string | null {
-  if (!video.videoWidth || !video.videoHeight) return null
+  if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || !video.videoWidth || !video.videoHeight) return null
   const scale = Math.min(1, MAX_FRAME_WIDTH / video.videoWidth)
   const canvas = document.createElement("canvas")
   canvas.width = Math.round(video.videoWidth * scale)
   canvas.height = Math.round(video.videoHeight * scale)
-  const ctx = canvas.getContext("2d")
+  const ctx = canvas.getContext("2d", { willReadFrequently: true })
   if (!ctx) return null
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-  const dataUrl = canvas.toDataURL("image/jpeg", 0.72)
+  if (isBlankFrame(ctx, canvas.width, canvas.height)) return null
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.8)
   return dataUrl.split(",")[1] ?? null
 }
 

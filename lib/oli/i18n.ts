@@ -33,7 +33,7 @@ export const STRINGS = {
     sendWhatsApp: "Send WhatsApp SOS with live location",
     call112: "Call 112 emergency",
     viewMap: "Open my pin in Google Maps",
-    sampleScene: "No camera found — using a sample scene so you can still try Oli.",
+    sampleScene: "No camera found. Please connect a camera or allow camera access.",
     ops: {
       location: { title: "Where am I?", hint: "Speak my street and area" },
       obstacles: { title: "What's ahead?", hint: "Describe my walking path" },
@@ -87,7 +87,7 @@ export const STRINGS = {
     sendWhatsApp: "வாட்ஸ்அப்பில் நேரடி இருப்பிடத்துடன் அவசர செய்தி அனுப்பு",
     call112: "112 அவசர அழைப்பு",
     viewMap: "கூகுள் மேப்ஸில் என் இருப்பிடம்",
-    sampleScene: "கேமரா இல்லை — மாதிரி காட்சியுடன் முயற்சிக்கலாம்.",
+    sampleScene: "கேமரா இல்லை. கேமராவை இணைக்கவும் அல்லது அனுமதி வழங்கவும்.",
     ops: {
       location: { title: "நான் எங்கே?", hint: "என் தெரு மற்றும் பகுதி" },
       obstacles: { title: "முன்னால் என்ன?", hint: "என் பாதையை விவரி" },
