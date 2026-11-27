@@ -5,4 +5,6 @@ minimumReleaseAgeExclude:
   - next
 
 allowBuilds:
+  core-js: false
   msedge-tts: false
+  tesseract.js: false

@@ -39,7 +39,24 @@ When `GEMINI_API_KEY` is not set, the header shows **"Key not set — Zero-Key O
 - **Where am I?** — live GPS via `navigator.geolocation` + free OpenStreetMap Nominatim reverse geocoding (`accept-language=en|ta`).
 - **Emergency SOS** — 3-beep Web Audio siren, live GPS + street address, spoken reassurance, and a green WhatsApp button pre-filled with a Google Maps pin.
 - **Voice** — neural `en-IN-NeerjaNeural` / `ta-IN-PallaviNeural` via `msedge-tts` (`rate -8%`, `pitch +4Hz`), falling back to the browser's `speechSynthesis` (rate 0.90, pitch 1.12).
-- **What's ahead? / Read text** — the camera opens and captures a frame; `POST /api/vision` returns an honest bilingual "Key not set — offline demo mode" status (no invented objects or text).
+- **Read text** — built-in offline browser OCR with `tesseract.js` (`eng`, or `tam+eng` in Tamil mode) reads real printed or on-screen text aloud even with no key. The OCR engine and language data download once on first use.
+- **What's ahead?** — built-in offline object detection with TensorFlow.js COCO-SSD (`lite_mobilenet_v2`). The top 3 objects with score ≥ 0.45 are spoken with a direction (left / straight ahead / right, from each box centre), with Tamil labels in Tamil mode.
+
+## Hybrid Offline-First Vision Architecture
+
+```
+camera frame (fresh JPEG, quality 0.85)
+        │
+        ▼
+POST /api/vision ──► GEMINI_API_KEY set?  ── yes ──► Gemini 2.5 Flash (temperature 0.1, 100 tokens)
+        │                                              plain 1–2 sentence description / reading
+        no (offline: true)
+        │
+        ├── What's ahead? ──► TensorFlow.js COCO-SSD in the browser ──► objects + left/right/straight
+        └── Read text     ──► Tesseract.js in the browser (eng / tam+eng) ──► "I read: …"
+```
+
+Everything works with zero keys; adding `GEMINI_API_KEY` seamlessly upgrades both actions to Gemini. The browser models (COCO-SSD weights and Tesseract language data) download once on first use and are then cached by the browser.
 
 With a key, frames go to Google `gemini-2.5-flash` and uses temperature 0.1 and max 100 tokens, describing only what is clearly visible in 1–2 plain spoken sentences in the active language.
 
