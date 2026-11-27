@@ -8,7 +8,7 @@ export interface VisionResult {
   source: "gemini" | "offline"
 }
 
-const MAX_FRAME_WIDTH = 1280
+const HIGH_RES: MediaTrackConstraints = { width: { ideal: 1920 }, height: { ideal: 1080 } }
 
 /** Opens the rear camera when available, otherwise any camera. */
 export async function openCamera(): Promise<MediaStream> {
@@ -17,11 +17,11 @@ export async function openCamera(): Promise<MediaStream> {
   }
   try {
     return await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: "environment" } },
+      video: { facingMode: { ideal: "environment" }, ...HIGH_RES },
       audio: false,
     })
   } catch {
-    return navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+    return navigator.mediaDevices.getUserMedia({ video: HIGH_RES, audio: false })
   }
 }
 
@@ -42,15 +42,26 @@ function isBlankFrame(ctx: CanvasRenderingContext2D, width: number, height: numb
   return max < 12 || max - min < 6
 }
 
-/** Captures a fresh frame from the live video as base64 JPEG, or null if the frame is blank. */
+/** True when the stream comes from a user-facing camera, whose preview should be mirrored. */
+export function isUserFacing(stream: MediaStream): boolean {
+  const facing = stream.getVideoTracks()[0]?.getSettings().facingMode
+  return facing !== "environment"
+}
+
+/**
+ * Captures a fresh frame at the video's full native resolution as base64 JPEG,
+ * or null if the frame is blank. The capture is never mirrored, even when the
+ * on-screen preview is, so text stays readable and left/right stay correct.
+ */
 export function captureFrame(video: HTMLVideoElement): string | null {
   if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || !video.videoWidth || !video.videoHeight) return null
-  const scale = Math.min(1, MAX_FRAME_WIDTH / video.videoWidth)
   const canvas = document.createElement("canvas")
-  canvas.width = Math.round(video.videoWidth * scale)
-  canvas.height = Math.round(video.videoHeight * scale)
+  canvas.width = video.videoWidth
+  canvas.height = video.videoHeight
   const ctx = canvas.getContext("2d", { willReadFrequently: true })
   if (!ctx) return null
+  ctx.setTransform(1, 0, 0, 1, 0, 0)
+  ctx.imageSmoothingEnabled = false
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
   if (isBlankFrame(ctx, canvas.width, canvas.height)) return null
   const dataUrl = canvas.toDataURL("image/jpeg", 0.85)

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Camera, ScanLine, X } from "lucide-react"
 import type { Strings } from "@/lib/oli/i18n"
-import { captureFrame, openCamera, stopStream, type VisionMode } from "@/lib/oli/vision"
+import { captureFrame, isUserFacing, openCamera, stopStream, type VisionMode } from "@/lib/oli/vision"
 
 interface CameraPanelProps {
   t: Strings
@@ -20,6 +20,7 @@ export function CameraPanel({ t, mode, scanning, onFrame, onClose }: CameraPanel
   const streamRef = useRef<MediaStream | null>(null)
   const autoCaptured = useRef(false)
   const [noCamera, setNoCamera] = useState(false)
+  const [mirrored, setMirrored] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -27,6 +28,7 @@ export function CameraPanel({ t, mode, scanning, onFrame, onClose }: CameraPanel
       .then((stream) => {
         if (cancelled) return stopStream(stream)
         streamRef.current = stream
+        setMirrored(isUserFacing(stream))
         if (videoRef.current) videoRef.current.srcObject = stream
       })
       .catch(() => {
@@ -70,7 +72,7 @@ export function CameraPanel({ t, mode, scanning, onFrame, onClose }: CameraPanel
             playsInline
             onPlaying={handlePlaying}
             aria-hidden="true"
-            className="h-full w-full object-cover"
+            className={mirrored ? "h-full w-full -scale-x-100 object-cover" : "h-full w-full object-cover"}
           />
         )}
         {scanning ? (
