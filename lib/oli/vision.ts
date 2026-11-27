@@ -8,7 +8,7 @@ export interface VisionResult {
   source: "gemini" | "offline"
 }
 
-const MAX_FRAME_WIDTH = 768
+const MAX_FRAME_WIDTH = 1280
 
 /** Opens the rear camera when available, otherwise any camera. */
 export async function openCamera(): Promise<MediaStream> {
@@ -53,7 +53,7 @@ export function captureFrame(video: HTMLVideoElement): string | null {
   if (!ctx) return null
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
   if (isBlankFrame(ctx, canvas.width, canvas.height)) return null
-  const dataUrl = canvas.toDataURL("image/jpeg", 0.8)
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.85)
   return dataUrl.split(",")[1] ?? null
 }
 

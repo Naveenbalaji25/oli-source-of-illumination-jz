@@ -13,6 +13,9 @@ import { STRINGS, type Lang, type Operation } from "@/lib/oli/i18n"
 import { getLiveLocation, getPosition, shortPlace } from "@/lib/oli/location"
 import { haptic, playSiren, unlockAudio } from "@/lib/oli/siren"
 import { analyzeFrame, type VisionMode } from "@/lib/oli/vision"
+import { readTextOffline } from "@/lib/oli/ocr"
+import { detectObjectsOffline, preloadDetector } from "@/lib/oli/detect"
+import { OFFLINE_OCR_UNCLEAR_MESSAGE, OFFLINE_PATH_CLEAR_MESSAGE } from "@/lib/oli/vision-messages"
 import {
   cancelListening,
   isRecognitionSupported,
@@ -125,7 +128,14 @@ export function OliApp({ offline }: { offline: boolean }) {
     setScanning(true)
     let reply: string
     try {
-      reply = (await analyzeFrame({ image, mode: camera, lang: l })).text
+      const result = await analyzeFrame({ image, mode: camera, lang: l })
+      if (result.source === "offline" && camera === "read") {
+        reply = image ? await readTextOffline(image, l) : OFFLINE_OCR_UNCLEAR_MESSAGE[l]
+      } else if (result.source === "offline" && camera === "obstacles") {
+        reply = image ? await detectObjectsOffline(image, l) : OFFLINE_PATH_CLEAR_MESSAGE[l]
+      } else {
+        reply = result.text
+      }
       haptic(30)
     } catch {
       reply = STRINGS[l].visionError
@@ -177,6 +187,7 @@ export function OliApp({ offline }: { offline: boolean }) {
     setStarted(true)
     void say(STRINGS[langRef.current].greeting)
     void warmUpPermissions()
+    if (offline) preloadDetector()
   }
 
   const stopAll = () => {
